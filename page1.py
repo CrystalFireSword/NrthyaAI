@@ -20,12 +20,15 @@ def load_pose():
 
 pose_tracker = load_pose()
 
-def calculate_angle(a, b, c):
-    """Calculates the angle at point B using vector dot product."""
+def calculate_angle_3d(a, b, c):
+    """Calculates the 3D angle at point B using vector dot product."""
     a, b, c = np.array(a), np.array(b), np.array(c)
     ba = a - b
     bc = c - b
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    norm = np.linalg.norm(ba) * np.linalg.norm(bc)
+    if norm == 0:
+        return 0.0
+    cosine_angle = np.dot(ba, bc) / norm
     angle = np.degrees(np.arccos(np.clip(cosine_angle, -1.0, 1.0)))
     return angle
 
@@ -44,16 +47,16 @@ def process_frame(uploaded_file):
         return None, image_rgb, None
 
     lm = results.pose_landmarks.landmark
-    def get_pt(idx): return [lm[idx].x, lm[idx].y]
+    def get_pt_3d(idx): return [lm[idx].x, lm[idx].y, lm[idx].z]
 
-    # Calculate 6 specific joint angles
+    # Calculate 6 specific joint angles in 3D
     angles = [
-        calculate_angle(get_pt(12), get_pt(14), get_pt(16)), # Right Elbow
-        calculate_angle(get_pt(11), get_pt(13), get_pt(15)), # Left Elbow
-        calculate_angle(get_pt(24), get_pt(26), get_pt(28)), # Right Knee
-        calculate_angle(get_pt(23), get_pt(25), get_pt(27)), # Left Knee
-        calculate_angle(get_pt(14), get_pt(12), get_pt(24)), # Right Shoulder
-        calculate_angle(get_pt(13), get_pt(11), get_pt(23))  # Left Shoulder
+        calculate_angle_3d(get_pt_3d(12), get_pt_3d(14), get_pt_3d(16)), # Right Elbow
+        calculate_angle_3d(get_pt_3d(11), get_pt_3d(13), get_pt_3d(15)), # Left Elbow
+        calculate_angle_3d(get_pt_3d(24), get_pt_3d(26), get_pt_3d(28)), # Right Knee
+        calculate_angle_3d(get_pt_3d(23), get_pt_3d(25), get_pt_3d(27)), # Left Knee
+        calculate_angle_3d(get_pt_3d(14), get_pt_3d(12), get_pt_3d(24)), # Right Shoulder
+        calculate_angle_3d(get_pt_3d(13), get_pt_3d(11), get_pt_3d(23))  # Left Shoulder
     ]
     
     # Draw skeleton for visual confirmation
@@ -92,13 +95,19 @@ if target_upload and attempt_upload:
         st.write("### Analysis Breakdown")
         table_data = []
         for i in range(len(labels)):
-            status = "Pass" if diffs[i] < 15 else "Review"
+            if diffs[i] < 15:
+                status = "✅ Perfect"
+            elif diffs[i] < 30:
+                status = "⚠️ Minor Adjustment"
+            else:
+                status = "❌ Needs Correction"
+                
             table_data.append({
                 "Joint": labels[i],
-                "Target Angle": f"{raw_t[i]:.1f}",
-                "Attempt Angle": f"{raw_a[i]:.1f}",
-                "Difference": f"{diffs[i]:.1f}",
-                "Result": status
+                "Target Angle": f"{raw_t[i]:.1f}°",
+                "Attempt Angle": f"{raw_a[i]:.1f}°",
+                "Difference": f"{diffs[i]:.1f}°",
+                "Status": status
             })
         st.table(table_data)
     else:
