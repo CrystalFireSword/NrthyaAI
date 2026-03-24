@@ -49,14 +49,16 @@ def process_frame(uploaded_file):
     lm = results.pose_landmarks.landmark
     def get_pt_3d(idx): return [lm[idx].x, lm[idx].y, lm[idx].z]
 
-    # Calculate 6 specific joint angles in 3D
+    # Calculate 8 specific joint angles in 3D
     angles = [
         calculate_angle_3d(get_pt_3d(12), get_pt_3d(14), get_pt_3d(16)), # Right Elbow
         calculate_angle_3d(get_pt_3d(11), get_pt_3d(13), get_pt_3d(15)), # Left Elbow
         calculate_angle_3d(get_pt_3d(24), get_pt_3d(26), get_pt_3d(28)), # Right Knee
         calculate_angle_3d(get_pt_3d(23), get_pt_3d(25), get_pt_3d(27)), # Left Knee
         calculate_angle_3d(get_pt_3d(14), get_pt_3d(12), get_pt_3d(24)), # Right Shoulder
-        calculate_angle_3d(get_pt_3d(13), get_pt_3d(11), get_pt_3d(23))  # Left Shoulder
+        calculate_angle_3d(get_pt_3d(13), get_pt_3d(11), get_pt_3d(23)), # Left Shoulder
+        calculate_angle_3d(get_pt_3d(12), get_pt_3d(24), get_pt_3d(26)), # Right Hip
+        calculate_angle_3d(get_pt_3d(11), get_pt_3d(23), get_pt_3d(25))  # Left Hip
     ]
     
     # Draw skeleton for visual confirmation
@@ -89,7 +91,12 @@ if target_upload and attempt_upload:
         res_col2.image(img_a, caption="Attempt Landmarks")
 
         # Feedback Table
-        labels = ["Right Elbow", "Left Elbow", "Right Knee", "Left Knee", "Right Shoulder", "Left Shoulder"]
+        labels = [
+            "Right Elbow", "Left Elbow", 
+            "Right Knee", "Left Knee", 
+            "Right Shoulder", "Left Shoulder",
+            "Right Hip", "Left Hip"
+        ]
         diffs = np.abs(np.array(raw_t) - np.array(raw_a))
         
         st.write("### Analysis Breakdown")

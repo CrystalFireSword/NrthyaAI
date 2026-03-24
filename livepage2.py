@@ -223,31 +223,38 @@ def overlay_hud(frame, score, joint_results, w, h):
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🎯 Target Pose")
-    target_file = st.file_uploader("Upload reference image", type=["jpg", "jpeg", "png"])
-    target_lms  = None
-    target_preview = None
-
-    if target_file:
-        file_bytes = np.asarray(bytearray(target_file.read()), dtype=np.uint8)
-        t_img_bgr  = cv2.imdecode(file_bytes, 1)
-        t_img_rgb  = cv2.cvtColor(t_img_bgr, cv2.COLOR_BGR2RGB)
-        t_res      = pose_engine.process(t_img_rgb)
-
-        if t_res.pose_landmarks:
-            target_lms = t_res.pose_landmarks.landmark
-            # Draw skeleton preview
-            preview = t_img_rgb.copy()
-            mp.solutions.drawing_utils.draw_landmarks(
-                preview,
-                t_res.pose_landmarks,
-                mp_pose.POSE_CONNECTIONS,
-                mp.solutions.drawing_utils.DrawingSpec(color=(0, 200, 100), thickness=2, circle_radius=3),
-                mp.solutions.drawing_utils.DrawingSpec(color=(0, 200, 100), thickness=2)
-            )
-            st.image(preview, caption="Target Pose Detected ✅", use_container_width=True)
-        else:
-            st.error("No pose detected in the uploaded image. Try a clearer full-body photo.")
+    st.markdown("### 🕉️ Karana Reference")
+    # Load available approved data
+    import os, json
+    DATA_DIR = "karana_data"
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+        
+    approved_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".json")]
+    target_lms = None
+    
+    if approved_files:
+        selected_karana = st.selectbox("Select Karana #", sorted(approved_files))
+        
+        # Load the pre-approved data
+        with open(os.path.join(DATA_DIR, selected_karana), "r") as f:
+            k_data = json.load(f)
+            # Convert list back to MediaPipe-like landmark objects for the projection logic
+            class Landmark:
+                def __init__(self, x, y, z, v):
+                    self.x, self.y, self.z, self.visibility = x, y, z, v
+            
+            target_lms = [Landmark(l[0], l[1], l[2], l[3]) for l in k_data['landmarks']]
+            target_angles = k_data['angles']
+            
+        st.success(f"Karana {selected_karana.split('.')[0]} Loaded ✅")
+        
+        # Display the pre-marked image
+        marked_img_path = os.path.join("karana_marked", f"{selected_karana.split('.')[0]}.jpg")
+        if os.path.exists(marked_img_path):
+            st.image(marked_img_path, caption="Approved Baseline", use_container_width=True)
+    else:
+        st.warning("No approved Karana data found. Run `process_karana.py` first.")
 
     st.markdown("---")
     st.markdown("### ⚙️ Settings")

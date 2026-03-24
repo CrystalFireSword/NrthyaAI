@@ -236,29 +236,34 @@ st.title("PoseSync: Interactive Coach")
 col_ref, col_live = st.columns([1, 2])
 
 with col_ref:
-    st.subheader("Reference Pose")
-    ref_file = st.file_uploader("Upload Target", type=["jpg", "png", "jpeg"])
-    coach = None
-    target_vis = None
-    
-    if ref_file and model:
-        file_bytes = np.asarray(bytearray(ref_file.read()), dtype=np.uint8)
-        img = cv2.imdecode(file_bytes, 1)
-        # Process Reference
-        res = model.process(img)
-        t_lms = model.get_landmarks(res)
+    st.subheader("Karana Reference")
+    # Load available approved data
+    import os, json
+    DATA_DIR = "karana_data"
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
         
-        if t_lms:
-            coach = InteractiveCoach(t_lms)
-            st.success("Reference Pose Analyzed ✅")
+    approved_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".json")]
+    coach = None
+    
+    if approved_files:
+        selected_karana = st.selectbox("Select Karana #", sorted(approved_files))
+        
+        # Load the pre-approved data
+        with open(os.path.join(DATA_DIR, selected_karana), "r") as f:
+            k_data = json.load(f)
+            t_lms = k_data['landmarks']
+            t_angles = k_data['angles']
             
-            # Visualise Reference
-            vis_ref = img.copy()
-            mp.solutions.drawing_utils.draw_landmarks(
-                vis_ref, res.pose_landmarks, mp.solutions.pose.POSE_CONNECTIONS)
-            st.image(cv2.cvtColor(vis_ref, cv2.COLOR_BGR2RGB), use_container_width=True)
-        else:
-            st.error("No pose detected in reference.")
+        coach = InteractiveCoach(t_lms)
+        st.success(f"Karana {selected_karana.split('.')[0]} Loaded ✅")
+        
+        # Display the pre-marked image
+        marked_img_path = os.path.join("karana_marked", f"{selected_karana.split('.')[0]}.jpg")
+        if os.path.exists(marked_img_path):
+            st.image(marked_img_path, caption="Approved Baseline", use_container_width=True)
+    else:
+        st.warning("No approved Karana data found. Run `process_karana.py` first.")
 
 with col_live:
     st.subheader("Live Correction")
