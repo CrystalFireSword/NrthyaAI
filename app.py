@@ -1,3 +1,5 @@
+import os
+os.environ["MEDIAPIPE_CACHE_DIR"] = "/tmp"
 import streamlit as st
 
 st.set_page_config(layout="wide", page_title="PoseSync Suite")
