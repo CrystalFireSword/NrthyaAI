@@ -8,9 +8,9 @@ st.sidebar.info("Select a module from the list below.")
 pg = st.navigation([
     st.Page("process_karana.py", title="Reference Processor (Admin)", icon="🕉️"),
     st.Page("interactive_coach.py", title="Interactive Coach (Smart)", icon="🤖"),
-    st.Page("livepage2.py", title="Visual Corrector (Classic)", icon="👁️"),
+    st.Page("live_corrector.py", title="Visual Corrector (Classic)", icon="👁️"),
     # st.Page("benchmark_page.py", title="Model Benchmark (Research)", icon="⚔️"),
-    st.Page("page1.py", title="Static Analyzer", icon="📷"),
+    st.Page("image_comparison.py", title="Static Analyzer", icon="📷"),
 ])
 
 pg.run()
